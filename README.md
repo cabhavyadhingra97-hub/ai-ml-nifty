@@ -1,81 +1,114 @@
 # Nifty 50 Next-Day Direction Predictor
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue) ![ML](https://img.shields.io/badge/ML-Ensemble-green) ![Streamlit](https://img.shields.io/badge/Dashboard-Streamlit-red)
+> An end-to-end ensemble machine learning system to predict the next-day directional movement of the Nifty 50 Index with realistic Indian market costs and walk-forward validation.
+
+**Built by CA Bhavya** • AI for Finance Level 2
+
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square)
+![ML](https://img.shields.io/badge/ML-Stacked_Ensemble-green?style=flat-square)
+![Streamlit](https://img.shields.io/badge/Dashboard-Streamlit-red?style=flat-square)
+![Backtesting](https://img.shields.io/badge/Backtesting-Realistic_Costs-orange?style=flat-square)
+
+---
+
+## Dashboard
+
+![Nifty 50 ML Predictor Dashboard](dashboard)
+
+> Interactive Streamlit dashboard showing live predictions, feature importance, and backtest equity curve.
+
+---
 
 ## Overview
-An end-to-end ensemble ML system to predict the next-day directional movement of the Nifty 50 Index, with realistic Indian market backtesting.
 
-**Built by CA Bhavya | AI for Finance Level 2**
+This project is a production-style ML system that predicts whether the Nifty 50 will close **higher or lower** the next trading day. 
+
+It goes beyond basic notebooks by incorporating:
+- Proper time-series validation
+- Realistic transaction costs (STT + slippage)
+- Probability calibration
+- Walk-forward testing
+- Deployed interactive dashboard
+
+---
+
+## Key Highlights
+
+- **Stacked Ensemble** — Random Forest + XGBoost + LightGBM with Logistic Regression meta-learner
+- **No Data Leakage** — All features and macro variables properly lagged
+- **Realistic Backtesting** — Includes Indian market costs + Half-Kelly position sizing
+- **Walk-Forward Validation** — Rolling 18-month training windows
+- **Probability Calibration** — Sigmoid calibration for more reliable confidence scores
+- **Feature Selection** — Top features selected using Random Forest importance
+
+---
 
 ## Methodology
 
-### Feature Engineering
-- 40+ custom technical indicators (RSI-14, MACD, Bollinger %B, ATR, OBV, Stochastic, Williams %R, CCI, EMA crossovers)
-- Macro features: India VIX (lagged 1 day), USDINR (lagged 1 day)
-- 5 lagged Nifty returns (lag-1 to lag-5), Rate-of-Change (5/10/20 days)
-- Zero data leakage: all macro features shifted 1 day; raw OHLCV dropped from feature set
+### 1. Feature Engineering
+- 40+ technical indicators (RSI, MACD, Bollinger Bands, ATR, Stochastic, Williams %R, CCI, etc.)
+- Lagged macro features (India VIX, USDINR)
+- Multiple lagged returns and rate-of-change features
+- All indicators calculated in a **leak-free** manner
 
-### Model Architecture
-- **Base Models**: Random Forest, XGBoost, LightGBM (all class-balanced)
-- **Meta-Learner**: Logistic Regression trained on OOF predictions
-- **Tuning**: RandomizedSearchCV with 5-fold TimeSeriesSplit, scoring=AUC
-- **Calibration**: Sigmoid probability calibration
+### 2. Model Architecture
+- Base models: Random Forest, XGBoost, LightGBM (with SMOTE balancing)
+- Meta-learner: Logistic Regression trained on out-of-fold predictions
+- Hyperparameter tuning using `RandomizedSearchCV` + `TimeSeriesSplit`
+- Final model calibrated using `CalibratedClassifierCV`
 
-### Backtesting
-- **Train**: Jan 2018 – Dec 2023 | **Test**: Jan 2024 – Present
-- **Walk-Forward**: Rolling 18-month train, 6-month test windows
-- **Costs**: 0.05% per trade + stop-loss at -1% per position
-- **Sizing**: Half-Kelly Criterion
+### 3. Backtesting Framework
+- **Train Period**: Jan 2018 – Dec 2023
+- **Test Period**: Jan 2024 – Present
+- Transaction costs + slippage modeled
+- Position sizing using Half-Kelly Criterion
+- Stop-loss applied at -1%
 
-## Performance (Baseline — Honest)
+---
 
-| Metric | Value |
-|---|---|
-| Test Accuracy | ~50% |
-| Sharpe Ratio | See dashboard |
-| Max Drawdown | See dashboard |
-| Win Rate | See dashboard |
+## Current Performance (Baseline)
 
-## Setup
+| Metric              | Value          | Notes                     |
+|---------------------|----------------|---------------------------|
+| Test Accuracy       | ~50%           | Near random               |
+| Win Rate            | ~43%           | Below 50%                 |
+| Sharpe Ratio        | Negative       | Strategy currently losing |
+| Max Drawdown        | High           | Needs improvement         |
 
-```bash
-# Clone the repo
-git clone https://github.com/YOUR_USERNAME/nifty50-ml-predictor.git
-cd nifty50-ml-predictor
+**Note**: This is the **honest baseline** result. The model shows a downward bias and trades too frequently. Significant improvements are planned in the next version (probability thresholding + regime filtering).
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the full pipeline
-python src/data_loader.py
-python src/feature_engineering.py
-python src/model_training.py
-python src/backtesting.py
-
-# (Optional) Walk-forward validation
-python src/walk_forward.py
-
-# Launch the dashboard
-streamlit run app.py
-```
+---
 
 ## Project Structure
 
 ```
-nifty50-ml-predictor/
+ai-ml-nifty/
 ├── src/
-│   ├── data_loader.py           # Data ingestion (yfinance)
-│   ├── feature_engineering.py   # 40+ leak-free indicators
-│   ├── model_training.py        # Stacked ensemble training
-│   ├── backtesting.py           # Realistic backtest engine
+│   ├── data_loader.py           # Data ingestion from yfinance
+│   ├── feature_engineering.py   # 40+ leak-free technical indicators
+│   ├── model_training.py        # Stacked ensemble + calibration
+│   ├── backtesting.py           # Realistic cost-aware backtester
 │   └── walk_forward.py          # Rolling window validation
-├── data/                        # Generated CSV files (gitignored)
+├── data/                        # Generated datasets (gitignored)
 ├── models/                      # Saved model artifacts (gitignored)
 ├── app.py                       # Streamlit dashboard
+├── dashboard                    # Dashboard screenshot
 ├── requirements.txt
 ├── .gitignore
 └── README.md
 ```
 
+---
+
 ## Tech Stack
-`Python` `Pandas` `Scikit-Learn` `XGBoost` `LightGBM` `Streamlit` `Plotly`
+
+`Python` `Pandas` `NumPy` `Scikit-Learn` `XGBoost` `LightGBM` `SMOTE` `Streamlit` `Plotly` `Joblib`
+
+---
+
+## How to Run
+
+```bash
+# 1. Clone the repository
+
+```
